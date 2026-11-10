@@ -19,13 +19,15 @@ Los instaladores salen de las [releases](https://github.com/mati-caliz/gastronov
 Para que los instaladores salgan firmados: un ejecutable sin firma hace que Chrome bloquee la descarga y que Windows
 lo muestre como de un editor desconocido. La firma la da SignPath Foundation, gratis para proyectos de código abierto.
 
-## Política de firma de código
+## Code signing policy
 
-Firma de código gratuita provista por [SignPath.io](https://about.signpath.io), certificado de
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
 [SignPath Foundation](https://signpath.org).
 
-- Se firman sólo los instaladores que arma el workflow `release.yml` de este repositorio a partir de un tag `v*`,
-  en los runners de GitHub; nada que se arme fuera de ese workflow.
-- Autor, revisión y aprobación de cada release: [mati-caliz](https://github.com/mati-caliz).
-- Privacidad: el componente no transmite información a ningún sistema en red, salvo lo que el usuario le pide a la
-  extensión imprimir en sus propias impresoras.
+- Se firman sólo los instaladores que arma el workflow `release.yml` de este repositorio a partir de un tag `v*`, en
+  los runners de GitHub, desde el código de este repositorio. Cada firma se aprueba a mano.
+- Committers y reviewers: [mati-caliz](https://github.com/mati-caliz).
+- Approvers: [mati-caliz](https://github.com/mati-caliz).
+- Privacidad: este programa no transfiere información a ningún otro sistema en red salvo que lo pida
+  específicamente el usuario o quien lo instala. Sólo lee los mensajes de la extensión y le manda a la impresora
+  local lo que Gastronova le pide imprimir.
