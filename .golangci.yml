@@ -1,0 +1,135 @@
+# Estándar de calidad para Go. Lo copia quality/sync.sh como .golangci.yml de cada módulo y
+# no se edita en el repo: golangci-lint no hereda configuraciones, así que la copia es la
+# configuración entera y `sync.sh --check` falla si se desvió.
+#
+# Todos los linters prendidos. Se apagan sólo los que se contradicen con otro o con una
+# convención del estándar, cada uno con su motivo. Un falso positivo comprobado se suprime en
+# la línea con `//nolint:<linter> // motivo`: nolintlint rechaza el nolint sin linter o sin
+# motivo, y el que ya no hace falta.
+version: "2"
+
+run:
+  timeout: 10m
+  tests: true
+  relative-path-mode: gomod
+  modules-download-mode: readonly
+
+linters:
+  default: all
+  disable:
+    # La forma del JSON la dicta cada contrato externo: snake_case para la API de OpenAI,
+    # camelCase para las APIs propias. Una sola regla global rompería uno de los dos.
+    - tagliatelle
+    # El texto que ve el usuario va en español (convención global): con tildes es "no ASCII".
+    - gosmopolitan
+    # Sólo conoce inglés: los comentarios y mensajes van en español (convención global) y marca
+    # palabras correctas ("argumentos" → "arguments").
+    - misspell
+    # Duplica a wsl_v5, que ya exige la línea en blanco antes de cada return.
+    - nlreturn
+    # Deprecados, cada uno reemplazado por su versión nueva, que queda prendida: wsl_v5,
+    # exhaustruct_v5 y gomodguard_v2.
+    - wsl
+    - exhaustruct
+    - gomodguard
+  settings:
+    cyclop:
+      max-complexity: 10
+      package-average: 0
+    depguard:
+      rules:
+        deprecated:
+          list-mode: lax
+          files: ["$all"]
+          deny:
+            - pkg: io/ioutil
+              desc: "deprecado: usar io y os"
+            - pkg: math/rand$
+              desc: "usar math/rand/v2, o crypto/rand si es para seguridad"
+            - pkg: github.com/pkg/errors
+              desc: "usar errors y fmt.Errorf con %w de la biblioteca estándar"
+            - pkg: github.com/golang/protobuf
+              desc: "deprecado: usar google.golang.org/protobuf"
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    exhaustive:
+      default-signifies-exhaustive: false
+    exhaustruct_v5:
+      # Los structs de la biblioteca estándar (http.Server, slog.HandlerOptions) traen decenas de
+      # campos opcionales: exigirlos todos obliga a escribir ceros. Los propios, completos.
+      ignore-patterns:
+        - '^[a-z0-9/]+\.[A-Za-z0-9_]+$'
+    funlen:
+      lines: 80
+      statements: 40
+      ignore-comments: false
+    gocognit:
+      min-complexity: 15
+    gocritic:
+      enable-all: true
+    govet:
+      enable-all: true
+    lll:
+      line-length: 110
+    nestif:
+      min-complexity: 4
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+    revive:
+      enable-all-rules: true
+      rules:
+        - name: argument-limit
+          arguments: [4]
+        - name: file-length-limit
+          arguments:
+            - max: 400
+              skipComments: false
+              skipBlankLines: false
+        - name: function-length
+          arguments: [40, 80]
+        - name: cognitive-complexity
+          arguments: [15]
+        - name: cyclomatic
+          arguments: [10]
+        - name: max-control-nesting
+          arguments: [4]
+        - name: line-length-limit
+          arguments: [110]
+        # Los números mágicos los controla mnd, con la misma vara que las otras pilas.
+        - name: add-constant
+          disabled: true
+        # Los imports con nombre los ordena y valida gci.
+        - name: imports-blocklist
+          disabled: true
+  exclusions:
+    generated: strict
+    presets: []
+
+formatters:
+  enable:
+    - gofumpt
+    - gci
+    - golines
+  settings:
+    gofumpt:
+      extra:
+        group-params: true
+        clothe-returns: true
+        balance-calls: true
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+    golines:
+      max-len: 110
+
+# Todos los problemas, sin recortes: por defecto se muestra uno por línea y se esconden los
+# repetidos, y un arreglo tapaba al siguiente en la misma línea.
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  uniq-by-line: false
