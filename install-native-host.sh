@@ -12,7 +12,10 @@ readonly INSTALL_DIR="${HOME}/.gastronova"
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 extension_id="${1:-${DEFAULT_EXTENSION_ID}}"
 
-case "$(uname -s)" in
+operating_system="$(uname -s)"
+readonly operating_system
+
+case "${operating_system}" in
   Linux*)
     chrome_dir="${HOME}/.config/google-chrome/NativeMessagingHosts"
     chromium_dir="${HOME}/.config/chromium/NativeMessagingHosts"
@@ -41,7 +44,7 @@ mkdir -p "${INSTALL_DIR}"
 installed_binary="${INSTALL_DIR}/${BINARY_NAME}"
 install -m 755 "${source_binary}" "${installed_binary}"
 
-if [[ "$(uname -s)" == Darwin* ]]; then
+if [[ "${operating_system}" == Darwin* ]]; then
   xattr -d com.apple.quarantine "${installed_binary}" 2>/dev/null || true
 fi
 

@@ -11,38 +11,37 @@
 #   gastronova-impresion.zip   macOS (Intel y Apple Silicon, con install-native-host.sh)
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
+if [[ "$#" -ne 1 ]]; then
     echo "Uso: scripts/package.sh <versión>, por ejemplo scripts/package.sh 2.1.0" >&2
     exit 1
 fi
 
 VERSION="$1"
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-OUTPUT_DIR="$SCRIPT_DIR/dist"
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+OUTPUT_DIR="${REPO_DIR}/dist"
 PACKAGE_NAME="gastronova-impresion"
 BINARY_NAME="gastronova-print-host"
 GO_IMAGE="golang:1.27.3-bookworm@sha256:d9b6a1beb9474adc2a1ce842573639b44b2a0dd49b6669f51d3821baf9ec37c9"
 GO_CACHE_VOLUME="go-quality-cache"
 CONTAINER_MEMORY="1500m"
-EXPECTED_PACKAGES=(exe deb rpm zip)
 
-mkdir -p "$OUTPUT_DIR"
+mkdir -p "${OUTPUT_DIR}"
 
 STAGING="$(mktemp -d)"
 trap 'rm -rf "$STAGING"' EXIT
-mkdir -p "$STAGING/bin"
+mkdir -p "${STAGING}/bin"
 
 echo "Compilando el host de impresion..."
-docker run --rm -m "$CONTAINER_MEMORY" \
-    -v "$SCRIPT_DIR":/src:ro -w /src \
-    -v "$GO_CACHE_VOLUME":/cache \
-    -v "$STAGING/bin":/out \
+docker run --rm -m "${CONTAINER_MEMORY}" \
+    -v "${REPO_DIR}":/src:ro -w /src \
+    -v "${GO_CACHE_VOLUME}":/cache \
+    -v "${STAGING}/bin":/out \
     -e GOMODCACHE=/cache/mod -e GOCACHE=/cache/build \
     -e GOFLAGS=-mod=readonly -e GOTOOLCHAIN=local -e CGO_ENABLED=0 \
-    -e BINARY_NAME="$BINARY_NAME" \
-    "$GO_IMAGE" bash -euc '
+    -e BINARY_NAME="${BINARY_NAME}" \
+    "${GO_IMAGE}" bash -euc '
         compile() {
-            GOOS="$1" GOARCH="$2" go build -trimpath -ldflags "-s -w" -o "/out/$3" ./cmd/gastronova-print-host
+            GOOS="$1" GOARCH="$2" go build -trimpath -buildvcs=false -ldflags "-s -w" -o "/out/$3" ./cmd/gastronova-print-host
         }
         compile windows amd64 "$BINARY_NAME.exe"
         compile linux amd64 "$BINARY_NAME"
@@ -51,21 +50,21 @@ docker run --rm -m "$CONTAINER_MEMORY" \
         chown -R "$(stat -c %u:%g /out)" /out
     '
 
-LINUX_INSTALL_DIR="$STAGING/linux/usr/lib/$PACKAGE_NAME"
-mkdir -p "$LINUX_INSTALL_DIR" "$STAGING/linux/DEBIAN" "$STAGING/windows" "$STAGING/macos"
+LINUX_INSTALL_DIR="${STAGING}/linux/usr/lib/${PACKAGE_NAME}"
+mkdir -p "${LINUX_INSTALL_DIR}" "${STAGING}/linux/DEBIAN" "${STAGING}/windows" "${STAGING}/macos"
 
-cp "$STAGING/bin/$BINARY_NAME" "$SCRIPT_DIR/install-native-host.sh" "$LINUX_INSTALL_DIR/"
-chmod +x "$LINUX_INSTALL_DIR/install-native-host.sh"
+cp "${STAGING}/bin/${BINARY_NAME}" "${REPO_DIR}/install-native-host.sh" "${LINUX_INSTALL_DIR}/"
+chmod +x "${LINUX_INSTALL_DIR}/install-native-host.sh"
 
 POSTINSTALL_MESSAGE="echo \"\"
-echo \"Gastronova Impresion instalado en /usr/lib/$PACKAGE_NAME\"
+echo \"Gastronova Impresion instalado en /usr/lib/${PACKAGE_NAME}\"
 echo \"Para completar la instalacion ejecuta:\"
-echo \"  /usr/lib/$PACKAGE_NAME/install-native-host.sh\"
+echo \"  /usr/lib/${PACKAGE_NAME}/install-native-host.sh\"
 echo \"\""
 
-cat > "$STAGING/linux/DEBIAN/control" << EOF
-Package: $PACKAGE_NAME
-Version: $VERSION
+cat > "${STAGING}/linux/DEBIAN/control" << EOF
+Package: ${PACKAGE_NAME}
+Version: ${VERSION}
 Section: utils
 Priority: optional
 Architecture: amd64
@@ -76,16 +75,16 @@ Description: Agente de impresion termica para Gastronova
  comunicarse con impresoras termicas conectadas localmente.
 EOF
 
-printf '#!/bin/bash\nset -e\n%s\n' "$POSTINSTALL_MESSAGE" > "$STAGING/linux/DEBIAN/postinst"
-chmod 755 "$STAGING/linux/DEBIAN/postinst"
+printf '#!/bin/bash\nset -e\n%s\n' "${POSTINSTALL_MESSAGE}" > "${STAGING}/linux/DEBIAN/postinst"
+chmod 755 "${STAGING}/linux/DEBIAN/postinst"
 
-cp "$STAGING/bin/$BINARY_NAME.exe" "$STAGING/windows/"
+cp "${STAGING}/bin/${BINARY_NAME}.exe" "${STAGING}/windows/"
 
-cp "$STAGING/bin/$BINARY_NAME-amd64" "$STAGING/bin/$BINARY_NAME-arm64" "$SCRIPT_DIR/install-native-host.sh" \
-    "$STAGING/macos/"
-chmod +x "$STAGING/macos/install-native-host.sh"
-cat > "$STAGING/macos/LEEME.txt" << EOF
-Gastronova - Agente de Impresion Termica v$VERSION
+cp "${STAGING}/bin/${BINARY_NAME}-amd64" "${STAGING}/bin/${BINARY_NAME}-arm64" "${REPO_DIR}/install-native-host.sh" \
+    "${STAGING}/macos/"
+chmod +x "${STAGING}/macos/install-native-host.sh"
+cat > "${STAGING}/macos/LEEME.txt" << EOF
+Gastronova - Agente de Impresion Termica v${VERSION}
 =====================================================
 
 Instalacion:
@@ -98,12 +97,12 @@ Soporte: soporte@gastronova.com.ar
 EOF
 
 echo "Generando .deb, .exe y .zip..."
-docker run --rm -m "$CONTAINER_MEMORY" \
-    -v "$STAGING":/staging \
-    -v "$SCRIPT_DIR/installer.nsi":/build/installer.nsi:ro \
-    -v "$OUTPUT_DIR":/output \
-    -e PACKAGE_NAME="$PACKAGE_NAME" \
-    -e VERSION="$VERSION" \
+docker run --rm -m "${CONTAINER_MEMORY}" \
+    -v "${STAGING}":/staging \
+    -v "${REPO_DIR}/installer.nsi":/build/installer.nsi:ro \
+    -v "${OUTPUT_DIR}":/output \
+    -e PACKAGE_NAME="${PACKAGE_NAME}" \
+    -e VERSION="${VERSION}" \
     debian:trixie-slim bash -c '
         set -euo pipefail
         apt-get update -qq
@@ -117,13 +116,13 @@ docker run --rm -m "$CONTAINER_MEMORY" \
     '
 
 echo "Generando .rpm..."
-docker run --rm -m "$CONTAINER_MEMORY" \
-    -v "$STAGING/linux/usr/lib/$PACKAGE_NAME":/staging:ro \
-    -v "$OUTPUT_DIR":/output \
-    -e PACKAGE_NAME="$PACKAGE_NAME" \
-    -e VERSION="$VERSION" \
-    -e BINARY_NAME="$BINARY_NAME" \
-    -e POSTINSTALL_MESSAGE="$POSTINSTALL_MESSAGE" \
+docker run --rm -m "${CONTAINER_MEMORY}" \
+    -v "${STAGING}/linux/usr/lib/${PACKAGE_NAME}":/staging:ro \
+    -v "${OUTPUT_DIR}":/output \
+    -e PACKAGE_NAME="${PACKAGE_NAME}" \
+    -e VERSION="${VERSION}" \
+    -e BINARY_NAME="${BINARY_NAME}" \
+    -e POSTINSTALL_MESSAGE="${POSTINSTALL_MESSAGE}" \
     fedora:45 bash -c '
         set -euo pipefail
         dnf install -y --quiet rpm-build > /dev/null
@@ -152,6 +151,10 @@ cp /staging/* %{buildroot}/usr/lib/$PACKAGE_NAME/
 
 %post
 $POSTINSTALL_MESSAGE
+
+%changelog
+* $(LC_ALL=C date -u "+%a %b %d %Y") Gastronova <soporte@gastronova.com.ar> - $VERSION-1
+- Version $VERSION
 SPEC
         rpmbuild -bb --quiet "/root/rpmbuild/SPECS/$PACKAGE_NAME.spec"
         cp "/root/rpmbuild/RPMS/x86_64/$PACKAGE_NAME-$VERSION-1.x86_64.rpm" "/output/$PACKAGE_NAME.rpm"
@@ -160,4 +163,4 @@ SPEC
 
 
 echo "Instaladores en dist/:"
-ls -lh "$OUTPUT_DIR"
+ls -lh "${OUTPUT_DIR}"
