@@ -20,8 +20,9 @@ const loadMode = packages.NeedName | packages.NeedFiles | packages.NeedCompiledG
 	packages.NeedTypes | packages.NeedTypesInfo | packages.NeedImports
 
 const (
-	httpPackage     = "net/http"
-	compositionRoot = "main"
+	httpPackage       = "net/http"
+	compositionRoot   = "main"
+	constructorPrefix = "New"
 )
 
 var errLoad = errors.New("layers: no se pudieron cargar los paquetes")
@@ -164,11 +165,24 @@ func calledFunction(info *types.Info, call *ast.CallExpr) *types.Func {
 	return nil
 }
 
+// isConstructor dice si la función arma una dependencia (NewService(pool)): pasarle el pool es armado,
+// no una consulta. Un constructor de un paquete de base (pgxpool.New) sigue contando.
+func isConstructor(function *types.Func) bool {
+	signature, isSignature := function.Type().(*types.Signature)
+
+	return strings.HasPrefix(function.Name(), constructorPrefix) && isSignature && signature.Recv() == nil
+}
+
 // queriesDatabase dice si la llamada consulta la base: llama a un paquete de base, o a algo cuya
 // firma recibe o devuelve sus tipos (un método de un pool propio, InTenant con su transacción).
 func queriesDatabase(info *types.Info, call *ast.CallExpr) bool {
-	if function := calledFunction(info, call); function != nil && isDatabasePackage(function.Pkg()) {
+	function := calledFunction(info, call)
+	if function != nil && isDatabasePackage(function.Pkg()) {
 		return true
+	}
+
+	if function != nil && isConstructor(function) {
+		return false
 	}
 
 	signature, isSignature := info.TypeOf(call.Fun).(*types.Signature)
