@@ -22,7 +22,7 @@ REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 OUTPUT_DIR="${REPO_DIR}/dist"
 PACKAGE_NAME="gastronova-impresion"
 BINARY_NAME="gastronova-print-host"
-GO_IMAGE="golang:1.27.3-bookworm@sha256:d9b6a1beb9474adc2a1ce842573639b44b2a0dd49b6669f51d3821baf9ec37c9"
+GO_IMAGE="golang:1.27.4-bookworm@sha256:4fa7c968ba93f1635670522dbb01a2c78150443e1385746924566079f36570ea"
 GO_CACHE_VOLUME="go-quality-cache"
 CONTAINER_MEMORY="1500m"
 

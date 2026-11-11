@@ -2,7 +2,7 @@ module github.com/mati-caliz/gastronova-print-agent
 
 go 1.27
 
-toolchain go1.27.3
+toolchain go1.27.4
 
 require (
 	github.com/alexbrainman/printer v0.0.0-20200912035444-f40f26f0bdeb
