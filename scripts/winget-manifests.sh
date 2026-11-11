@@ -13,7 +13,8 @@ fi
 readonly VERSION="$1"
 readonly OUTPUT_DIR="$2"
 readonly PACKAGE_IDENTIFIER="Gastronova.Impresion"
-readonly MANIFEST_VERSION="1.10.0"
+readonly MANIFEST_VERSION="1.28.0"
+readonly SCHEMA_URL_PREFIX="https://aka.ms/winget-manifest"
 readonly REPOSITORY_URL="https://github.com/mati-caliz/gastronova-print-agent"
 readonly INSTALLER_URL="${REPOSITORY_URL}/releases/download/v${VERSION}/gastronova-impresion.exe"
 readonly UNINSTALL_KEY="GastronovaImpresion"
@@ -26,6 +27,7 @@ readonly release_date
 mkdir -p "${OUTPUT_DIR}"
 
 cat >"${OUTPUT_DIR}/${PACKAGE_IDENTIFIER}.yaml" <<EOF
+# yaml-language-server: \$schema=${SCHEMA_URL_PREFIX}.version.${MANIFEST_VERSION}.schema.json
 PackageIdentifier: ${PACKAGE_IDENTIFIER}
 PackageVersion: ${VERSION}
 DefaultLocale: es-AR
@@ -34,6 +36,7 @@ ManifestVersion: ${MANIFEST_VERSION}
 EOF
 
 cat >"${OUTPUT_DIR}/${PACKAGE_IDENTIFIER}.installer.yaml" <<EOF
+# yaml-language-server: \$schema=${SCHEMA_URL_PREFIX}.installer.${MANIFEST_VERSION}.schema.json
 PackageIdentifier: ${PACKAGE_IDENTIFIER}
 PackageVersion: ${VERSION}
 InstallerType: nullsoft
@@ -58,6 +61,7 @@ ManifestVersion: ${MANIFEST_VERSION}
 EOF
 
 cat >"${OUTPUT_DIR}/${PACKAGE_IDENTIFIER}.locale.es-AR.yaml" <<EOF
+# yaml-language-server: \$schema=${SCHEMA_URL_PREFIX}.defaultLocale.${MANIFEST_VERSION}.schema.json
 PackageIdentifier: ${PACKAGE_IDENTIFIER}
 PackageVersion: ${VERSION}
 PackageLocale: es-AR
