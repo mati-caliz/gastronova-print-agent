@@ -6,6 +6,9 @@
 #
 #   scripts/verify-go.sh
 #
+# scripts/layers es el chequeo de capas (go/layers): ningún archivo atiende HTTP y consulta la base a
+# la vez; los que todavía mezclan van en .layers-pending, que sólo se achica.
+#
 # Un módulo con tests de integración le pasa la red de su base descartable en GO_VERIFY_NETWORK y
 # los nombres de las variables que leen esos tests en GO_VERIFY_ENV (separados por espacios).
 set -euo pipefail
@@ -37,6 +40,10 @@ docker run --rm -m "${MEMORY_LIMIT}" --cgroup-parent="${VERIFY_CGROUP}" --log-dr
     go mod tidy -diff
     golangci-lint fmt --diff
     golangci-lint run
+    if [ -d scripts/layers ]; then
+      (cd scripts/layers && go build -o /tmp/layers .)
+      /tmp/layers ./...
+    fi
     go test -race -shuffle=on -count=1 -covermode=atomic -coverpkg=./... -coverprofile=/tmp/coverage.out ./...
     if [ -f scripts/check-go-coverage.sh ]; then bash scripts/check-go-coverage.sh /tmp/coverage.out; fi
     GOTOOLCHAIN=auto go run golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION} ./...
