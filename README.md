@@ -14,20 +14,18 @@ Cómo dejarlo andando en un local:
 [Cómo conectar una impresora térmica a Gastronova](https://gastronova.com.ar/blog/como-conectar-impresora-termica-gastronova).
 Los instaladores salen de las [releases](https://github.com/mati-caliz/gastronova-print-agent/releases).
 
-## Por qué es público
+## Cómo se instala en Windows
 
-Para que los instaladores salgan firmados: un ejecutable sin firma hace que Chrome bloquee la descarga y que Windows
-lo muestre como de un editor desconocido. La firma la da SignPath Foundation, gratis para proyectos de código abierto.
+Sin firma digital, un `.exe` bajado con el navegador hace que Chrome frene la descarga y que Windows lo muestre como
+de un editor desconocido. SignPath Foundation rechazó la firma gratuita (pide un proyecto con adopción pública) y un
+certificado propio es pago, así que el camino principal no pasa por el navegador:
 
-## Code signing policy
+- **PowerShell**: `irm https://gastronova.com.ar/impresion | iex`, o lo mismo con Windows + R como
+  `powershell -c "irm https://gastronova.com.ar/impresion | iex"`. `gastronova-impresion.ps1` baja el `.exe` de su
+  misma release, lo compara contra el SHA256 que trae adentro y lo corre con `/S`. Lo que baja PowerShell no lleva la
+  marca de internet, así que no aparece SmartScreen.
+- **winget**: `winget install Gastronova.Impresion`. Con cada release, `scripts/winget-manifests.sh` arma los
+  manifiestos para el PR a `microsoft/winget-pkgs`.
 
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
-[SignPath Foundation](https://signpath.org).
-
-- Se firman sólo los instaladores que arma el workflow `release.yml` de este repositorio a partir de un tag `v*`, en
-  los runners de GitHub, desde el código de este repositorio. Cada firma se aprueba a mano.
-- Committers y reviewers: [mati-caliz](https://github.com/mati-caliz).
-- Approvers: [mati-caliz](https://github.com/mati-caliz).
-- Privacidad: este programa no transfiere información a ningún otro sistema en red salvo que lo pida
-  específicamente el usuario o quien lo instala. Sólo lee los mensajes de la extensión y le manda a la impresora
-  local lo que Gastronova le pide imprimir.
+El `.exe` sigue en la release para quien prefiera el instalador con ventanas. El repo es público para que cualquiera
+pueda ver qué instala.

@@ -6,6 +6,7 @@
 #
 # Salida en dist/:
 #   gastronova-impresion.exe   Windows (instalador NSIS)
+#   gastronova-impresion.ps1   Windows por PowerShell: baja ese .exe, lo verifica y lo instala sin preguntas
 #   gastronova-impresion.deb   Debian, Ubuntu, Mint
 #   gastronova-impresion.rpm   Fedora, RHEL, openSUSE
 #   gastronova-impresion.zip   macOS (Intel y Apple Silicon, con install-native-host.sh)
@@ -114,6 +115,11 @@ docker run --rm -m "${CONTAINER_MEMORY}" \
         zip -j -q "/output/$PACKAGE_NAME.zip" /staging/macos/*
         chown "$(stat -c %u:%g /output)" /output/*
     '
+
+echo "Generando el instalador por PowerShell..."
+INSTALLER_SHA256="$(sha256sum "${OUTPUT_DIR}/${PACKAGE_NAME}.exe" | cut -d ' ' -f 1 | tr '[:lower:]' '[:upper:]')"
+sed -e '1s/^\xEF\xBB\xBF//' -e "s/__VERSION__/${VERSION}/" -e "s/__INSTALLER_SHA256__/${INSTALLER_SHA256}/" \
+    "${REPO_DIR}/install-windows.ps1" > "${OUTPUT_DIR}/${PACKAGE_NAME}.ps1"
 
 echo "Generando .rpm..."
 docker run --rm -m "${CONTAINER_MEMORY}" \

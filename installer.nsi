@@ -52,7 +52,7 @@ Function .onInit
 
   MessageBox MB_OKCANCEL|MB_ICONINFORMATION \
     "Gastronova Impresion ya esta instalado.$\n$\nSe desinstalara la version anterior antes de continuar." \
-    IDOK uninstall
+    /SD IDOK IDOK uninstall
   Abort
 
   uninstall:
