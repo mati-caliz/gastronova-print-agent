@@ -1,0 +1,3 @@
+iconerror
+iconinformation
+nativemessage
