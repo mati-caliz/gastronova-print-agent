@@ -229,28 +229,40 @@ func mixedFiles(loaded []*packages.Package, moduleDir string) map[string]mixed {
 		}
 
 		for index, file := range pkg.Syntax {
-			if ast.IsGenerated(file) || !importsHTTP(file) {
-				continue
+			if entry, isMixed := mixedFile(pkg, index, file, moduleDir); isMixed {
+				found[entry.path] = entry
 			}
-
-			position, queries := firstQuery(pkg.TypesInfo, file)
-			if !queries {
-				continue
-			}
-
-			absolute := pkg.CompiledGoFiles[index]
-
-			relative, err := filepath.Rel(moduleDir, absolute)
-			if err != nil {
-				relative = absolute
-			}
-
-			relative = filepath.ToSlash(relative)
-			found[relative] = mixed{path: relative, position: pkg.Fset.Position(position)}
 		}
 	}
 
 	return found
+}
+
+// mixedFile dice si un archivo del paquete atiende HTTP y consulta la base a la vez.
+func mixedFile(pkg *packages.Package, index int, file *ast.File, moduleDir string) (mixed, bool) {
+	var none mixed
+
+	if ast.IsGenerated(file) || !importsHTTP(file) {
+		return none, false
+	}
+
+	position, queries := firstQuery(pkg.TypesInfo, file)
+	if !queries {
+		return none, false
+	}
+
+	relative := moduleRelative(moduleDir, pkg.CompiledGoFiles[index])
+
+	return mixed{path: relative, position: pkg.Fset.Position(position)}, true
+}
+
+func moduleRelative(moduleDir, absolute string) string {
+	relative, err := filepath.Rel(moduleDir, absolute)
+	if err != nil {
+		return absolute
+	}
+
+	return filepath.ToSlash(relative)
 }
 
 func readPending(path string) (map[string]bool, error) {
