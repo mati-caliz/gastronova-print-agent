@@ -65,7 +65,7 @@ linters:
       statements: 40
       ignore-comments: false
     gocognit:
-      min-complexity: 15
+      min-complexity: 12
     gocritic:
       enable-all: true
     govet:
