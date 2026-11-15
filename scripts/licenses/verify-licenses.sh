@@ -53,7 +53,9 @@ lockfile_owner() {
   while [[ "${directory}" != "${repo_dir}" && ! -f "${directory}/pnpm-lock.yaml" ]]; do
     directory="$(dirname "${directory}")"
   done
-  [[ -f "${directory}/pnpm-lock.yaml" ]] && echo "${directory}"
+  if [[ -f "${directory}/pnpm-lock.yaml" ]]; then
+    echo "${directory}"
+  fi
 }
 
 # Con uv.lock, lo que exporta sin las de desarrollo. Sin lockfile (los paquetes de labrecha, el
@@ -96,8 +98,8 @@ while read -r stack subdir _; do
   target="${target%/.}"
   case "${stack}" in
     typescript)
-      owner="$(lockfile_owner "${target}")" || continue
-      [[ -n "${checked_lockfiles[${owner}]:-}" ]] && continue
+      owner="$(lockfile_owner "${target}")"
+      [[ -z "${owner}" || -n "${checked_lockfiles[${owner}]:-}" ]] && continue
       checked_lockfiles[${owner}]=1
       check "pnpm en ${owner#"${repo_dir}"/}" pnpm_licenses "${owner}"
       ;;
