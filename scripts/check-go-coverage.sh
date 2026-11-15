@@ -3,7 +3,9 @@
 #
 # Go mide sentencias, no ramas: se exige el umbral de líneas de quality/coverage.conf al total
 # y el piso por archivo a cada uno, para que un archivo sin tests no se esconda detrás del
-# promedio. Lo genera quality/sync.sh con los umbrales: no se edita en el repo.
+# promedio. Cada archivo debajo de la vara siguiente lista las líneas que ningún test ejecutó, para
+# saber qué probar sin volver a correr la suite. Lo genera quality/sync.sh con los umbrales: no se
+# edita en el repo.
 #
 #   scripts/check-go-coverage.sh coverage.out
 set -euo pipefail
@@ -29,6 +31,34 @@ awk -v min_total="${MIN_TOTAL}" -v min_file="${MIN_PER_FILE}" -v next_total="${N
     statements[block] = $2
     if ($3 > 0) covered[block] = 1
   }
+  function uncovered_lines(target,    block, file, range, count, starts, finish, ends, parts, order, i, j, moved, listed) {
+    count = 0
+    for (block in statements) {
+      if (block in covered) continue
+      file = block
+      sub(/:[0-9.,]+$/, "", file)
+      if (file != target) continue
+      range = substr(block, length(file) + 2)
+      split(range, ends, ",")
+      count++
+      split(ends[1], parts, ".")
+      starts[count] = parts[1] + 0
+      order[count] = count
+      split(ends[2], parts, ".")
+      finish[count] = parts[1] + 0
+    }
+    for (i = 2; i <= count; i++) {
+      for (j = i; j > 1 && starts[order[j]] < starts[order[j - 1]]; j--) {
+        moved = order[j]; order[j] = order[j - 1]; order[j - 1] = moved
+      }
+    }
+    listed = ""
+    for (i = 1; i <= count; i++) {
+      range = starts[order[i]] == finish[order[i]] ? starts[order[i]] : starts[order[i]] "-" finish[order[i]]
+      listed = listed (listed == "" ? "" : ", ") range
+    }
+    return listed
+  }
   END {
     for (block in statements) {
       file = block
@@ -52,6 +82,7 @@ awk -v min_total="${MIN_TOTAL}" -v min_file="${MIN_PER_FILE}" -v next_total="${N
         failed = 1
       } else if (percent < next_file) {
         printf "vara siguiente (QS-303): %s con %.1f %% de sentencias (piso %d %%)\n", file, percent, next_file
+        printf "  sin cubrir: %s\n", uncovered_lines(file)
       }
     }
     percent = 100 * total_covered / total
