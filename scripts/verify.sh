@@ -3,13 +3,17 @@
 # build-lock.sh. El workflow de release no lo corre: se valida acá antes de crear el tag.
 #
 #   scripts/verify.sh            todo
-#   scripts/verify.sh go|shell
+#   scripts/verify.sh go|.|shell     «.» es el módulo de Go de .quality: lo mismo que go
 set -euo pipefail
 
 case "${1:-all}" in
-  go | shell | all) ;;
+  -h | --help)
+    printf 'Uso: %s [go|.|shell]\n' "$0"
+    exit 0
+    ;;
+  go | . | shell | all) ;;
   *)
-    printf 'Uso: %s [go|shell]\n' "$0" >&2
+    printf 'Uso: %s [go|.|shell]\n' "$0" >&2
     exit 2
     ;;
 esac
@@ -36,7 +40,7 @@ check_shell() {
 bash ../infra/quality/sync.sh . --check
 
 case "${TARGET}" in
-  go) check_go ;;
+  go | .) check_go ;;
   shell) check_shell ;;
   all)
     check_go
