@@ -10,6 +10,8 @@ set -euo pipefail
 
 readonly MIN_TOTAL=80
 readonly MIN_PER_FILE=50
+readonly NEXT_TOTAL=90
+readonly NEXT_PER_FILE=70
 
 profile="${1:?uso: check-go-coverage.sh <coverage.out>}"
 [[ -s "${profile}" ]] || {
@@ -19,7 +21,8 @@ profile="${1:?uso: check-go-coverage.sh <coverage.out>}"
 
 # Un mismo bloque aparece una vez por paquete de test que lo mide: cuenta como cubierto si
 # alguno lo ejecutó, y sus sentencias se suman una sola vez.
-awk -v min_total="${MIN_TOTAL}" -v min_file="${MIN_PER_FILE}" '
+awk -v min_total="${MIN_TOTAL}" -v min_file="${MIN_PER_FILE}" -v next_total="${NEXT_TOTAL}" \
+  -v next_file="${NEXT_PER_FILE}" '
   NR == 1 && /^mode:/ { next }
   {
     block = $1
@@ -47,11 +50,14 @@ awk -v min_total="${MIN_TOTAL}" -v min_file="${MIN_PER_FILE}" '
       if (percent < min_file) {
         printf "%s: %.1f %% de sentencias (piso %d %%)\n", file, percent, min_file > "/dev/stderr"
         failed = 1
+      } else if (percent < next_file) {
+        printf "vara siguiente (QS-303): %s con %.1f %% de sentencias (piso %d %%)\n", file, percent, next_file
       }
     }
     percent = 100 * total_covered / total
     printf "Cobertura de sentencias: %.1f %% (mínimo %d %%)\n", percent, min_total
     if (percent < min_total) failed = 1
+    if (percent < next_total) printf "vara siguiente (QS-303): total por debajo de %d %%\n", next_total
     exit failed
   }
 ' "${profile}"
