@@ -35,6 +35,13 @@ for variable in ${GO_VERIFY_ENV:-}; do
   integration_options+=(-e "${variable}")
 done
 
+# La nocturna muta el módulo a través del scripts/verify.sh del repo, que levanta su base de
+# integración: con GO_VERIFY_MUTATION=1 este script corre gremlins en vez del gate (QS-404).
+if [[ "${GO_VERIFY_MUTATION:-}" == 1 ]]; then
+  repo_root="$(git -C "${module_dir}" rev-parse --show-toplevel)"
+  exec bash "${repo_root}/../infra/quality/go/mutation-go.sh" "${module_dir}"
+fi
+
 readonly PACKAGE_PATTERN='^(\./[A-Za-z0-9_./-]*)( \./[A-Za-z0-9_./-]*)*$'
 
 scoped_script() {
