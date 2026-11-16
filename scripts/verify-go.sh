@@ -14,9 +14,11 @@
 #
 # Con GO_VERIFY_PACKAGES (paquetes separados por espacios, como ./internal/orders/...) corre sólo el
 # formato, el lint y los tests de esos paquetes: es la validación de lo tocado de
-# server-bin/validate-changes.sh. tidy, capas, cobertura y govulncheck son del módulo entero y quedan
-# para el gate completo. GO_VERIFY_TESTS=false saca los tests: es para un módulo cuyos tests de
-# integración necesitan la base que levanta el gate del repo.
+# server-bin/validate-changes.sh. Los tres corren aunque falle uno: si el lint cortara, el log no
+# nombraría los paquetes cuyos tests no corrieron y la corrida siguiente los daría por validados.
+# tidy, capas, cobertura y govulncheck son del módulo entero y quedan para el gate completo.
+# GO_VERIFY_TESTS=false saca los tests: es para un módulo cuyos tests de integración necesitan la
+# base que levanta el gate del repo.
 set -euo pipefail
 
 readonly GOLANGCI_IMAGE="golangci/golangci-lint:v2.15.0@sha256:fbfcfd12a6f8d7f1b97b3362ca80fc2a244d46863148c73cb88e7793af96c481"
@@ -49,10 +51,12 @@ scoped_script() {
     echo "GO_VERIFY_PACKAGES tiene que ser una lista de paquetes relativos (./internal/x/...)" >&2
     exit 2
   fi
-  printf '%s\n' "golangci-lint fmt --diff" "golangci-lint run ${GO_VERIFY_PACKAGES}"
+  printf '%s\n' "status=0" "golangci-lint fmt --diff || status=1" \
+    "golangci-lint run ${GO_VERIFY_PACKAGES} || status=1"
   if [[ "${GO_VERIFY_TESTS:-true}" == true ]]; then
-    printf '%s\n' "go test -race -shuffle=on -count=1 ${GO_VERIFY_PACKAGES}"
+    printf '%s\n' "go test -race -shuffle=on -count=1 ${GO_VERIFY_PACKAGES} || status=1"
   fi
+  printf '%s\n' "exit \"\${status}\""
 }
 
 full_script() {
