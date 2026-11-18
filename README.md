@@ -20,6 +20,9 @@ Sin firma digital, un `.exe` bajado con el navegador hace que Chrome frene la de
 de un editor desconocido. SignPath Foundation rechazó la firma gratuita (pide un proyecto con adopción pública) y un
 certificado propio es pago, así que el camino principal no pasa por el navegador:
 
+- **Microsoft Store**: [Gastronova Impresión](https://apps.microsoft.com/detail/9ND0HVKGVFZ2), el paquete MSIX de
+  `scripts/msix-package.sh`, que firma la Store. Es el que ofrece primero la tarjeta de Impresoras; se abre una vez
+  desde el menú Inicio para registrar el host.
 - **PowerShell**: `irm https://gastronova.com.ar/impresion | iex`, o lo mismo con Windows + R como
   `powershell -c "irm https://gastronova.com.ar/impresion | iex"`. `gastronova-impresion.ps1` baja el `.exe` de su
   misma release, lo compara contra el SHA256 que trae adentro y lo corre con `/S`. Lo que baja PowerShell no lleva la
